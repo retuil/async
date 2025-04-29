@@ -25,18 +25,11 @@ run();
 
 async function sendRequest(url) {
     return new Promise((resolve) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", url, true);
-
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    resolve(JSON.parse(xhr.response));
-                }
+        fetch(url).then(res => {
+            if (res.status === 200) {
+                resolve(res.json());
             }
-        };
-
-        xhr.send();
+        })
     })
 }
 
