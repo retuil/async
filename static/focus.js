@@ -1,24 +1,28 @@
 const API = {
     organizationList: "/orgsList",
-    analytics: "/api3/analytics",
+    analytics: "/api3/analitics",
     orgReqs: "/api3/reqBase",
     buhForms: "/api3/buh",
 };
 
 async function run() {
-    await sendRequest(API.organizationList).then(async (orgOgrns) => {
-        const ogrns = orgOgrns.join(",");
-        await sendRequest(`${API.orgReqs}?ogrn=${ogrns}`).then( async (requisites) => {
+    await sendRequest(API.organizationList)
+        .then(async (orgOgrns) => {
+            const ogrns = orgOgrns.join(",");
+            const requisites = await sendRequest(`${API.orgReqs}?ogrn=${ogrns}`);
+            return {ogrns, orgOgrns, requisites};
+        }).then(async ({ogrns, orgOgrns, requisites}) => {
             const orgsMap = reqsToMap(requisites);
-            await sendRequest(`${API.analytics}?ogrn=${ogrns}`).then(async (analytics) => {
-                addInOrgsMap(orgsMap, analytics, "analytics");
-                await sendRequest(`${API.buhForms}?ogrn=${ogrns}`).then((buh) => {
-                    addInOrgsMap(orgsMap, buh, "buhForms");
-                    render(orgsMap, orgOgrns);
-                });
-            });
+            const analytics = await sendRequest(`${API.analytics}?ogrn=${ogrns}`);
+            return {ogrns, orgOgrns, orgsMap, analytics};
+        }).then(async ({ogrns, orgOgrns, orgsMap, analytics}) => {
+            addInOrgsMap(orgsMap, analytics, "analytics");
+            const buh = await sendRequest(`${API.buhForms}?ogrn=${ogrns}`)
+            return {ogrns, orgOgrns, orgsMap, buh};
+        }).then(({orgOgrns, orgsMap, buh}) => {
+            addInOrgsMap(orgsMap, buh, "buhForms");
+            render(orgsMap, orgOgrns);
         });
-    });
 }
 
 run();
@@ -26,8 +30,10 @@ run();
 async function sendRequest(url) {
     return new Promise((resolve) => {
         fetch(url).then(res => {
-            if (res.status === 200) {
+            if (res.ok) {
                 resolve(res.json());
+            } else {
+                alert(`${res.status}: ${res.statusText}`)
             }
         })
     })
@@ -81,7 +87,7 @@ function renderOrganization(orgInfo, template, container) {
                 orgInfo.buhForms[orgInfo.buhForms.length - 1].form2[0] &&
                 orgInfo.buhForms[orgInfo.buhForms.length - 1].form2[0]
                     .endValue) ||
-                0
+            0
         );
     } else {
         money.textContent = "—";
