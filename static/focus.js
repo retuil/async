@@ -6,7 +6,7 @@ const API = {
 };
 
 async function run() {
-    const orgOgrns = await sendRequest(API.organizationList)
+    const orgOgrns = await sendRequest(API.organizationList);
     const ogrns = orgOgrns.join(",");
     const [requisites, analytics, buh] =
         await Promise.all([
